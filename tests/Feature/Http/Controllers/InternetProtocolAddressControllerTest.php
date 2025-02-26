@@ -67,4 +67,61 @@ class InternetProtocolAddressControllerTest extends TestCase
                 ]
             ]);
     }
+
+    public function test_show_displays_internet_protocol_address(): void
+    {
+        $user = User::factory()->create();
+        $ipAddress = InternetProtocolAddress::factory()->create(['user_id' => $user->id]);
+
+        $response = $this->actingAs($user, 'sanctum')
+            ->getJson(route('internet-protocol-address.show', $ipAddress));
+
+        $response->assertStatus(200)
+            ->assertJsonFragment([
+                'id'          => $ipAddress->id,
+                'ip_address'  => $ipAddress->ip_address,
+                'label'       => $ipAddress->label,
+                'comment'     => $ipAddress->comment,
+                'user_id'     => $user->id,
+            ]);
+    }
+
+    public function test_update_modifies_internet_protocol_address(): void
+    {
+        $user = User::factory()->create();
+        $ipAddress = InternetProtocolAddress::factory()->create(['user_id' => $user->id]);
+
+        $updatedData = [
+            'ip_address' => '192.168.1.100',
+            'label'      => 'Updated Server',
+            'comment'    => 'Updated comment',
+        ];
+
+        $response = $this->actingAs($user, 'sanctum')
+            ->putJson(route('internet-protocol-address.update', $ipAddress), $updatedData);
+
+        $response->assertStatus(200)
+            ->assertJsonFragment($updatedData);
+
+        $this->assertDatabaseHas('internet_protocol_addresses', array_merge($updatedData, [
+            'id'      => $ipAddress->id,
+            'user_id' => $user->id,
+        ]));
+    }
+
+    public function test_destroy_deletes_internet_protocol_address(): void
+    {
+        $user = User::factory()->create();
+        $ipAddress = InternetProtocolAddress::factory()->create(['user_id' => $user->id]);
+
+        $response = $this->actingAs($user, 'sanctum')
+            ->deleteJson(route('internet-protocol-address.destroy', $ipAddress));
+
+        $response->assertStatus(200)
+            ->assertJson(['message' => 'delete successfull']);
+
+        $this->assertDatabaseMissing('internet_protocol_addresses', [
+            'id' => $ipAddress->id,
+        ]);
+    }
 }

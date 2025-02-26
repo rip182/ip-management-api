@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\InternetProtocolAddress;
 use Illuminate\Http\Request;
 use App\Http\Requests\StoreInternetProtocolAddressRequest;
+use App\Http\Requests\UpdateInternetProtocolAdressRequest;
 use Illuminate\Support\Facades\Auth;
 
 class InternetProtocolAddressController extends Controller
@@ -47,9 +48,11 @@ class InternetProtocolAddressController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, InternetProtocolAddress $internetProtocolAddress)
+    public function update(UpdateInternetProtocolAdressRequest $request, InternetProtocolAddress $internetProtocolAddress)
     {
-        //
+        $internetProtocolAddress->update($request->validated());
+        $data = $internetProtocolAddress->fresh();
+        return response()->json($data, 200);
     }
 
     /**
@@ -57,6 +60,7 @@ class InternetProtocolAddressController extends Controller
      */
     public function destroy(InternetProtocolAddress $internetProtocolAddress)
     {
-        //
+        $internetProtocolAddress->delete();
+        return response()->json(['message' => 'delete successfull'], 200);
     }
 }
