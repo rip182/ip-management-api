@@ -48,8 +48,8 @@ return [
     */
 
     'expiration' => null,
-    'access_token_expiration' => .5,
-    'refresh_access_expiration' => 10,
+    'access_token_expiration' => 30,
+    'refresh_access_expiration' => 60,
 
     /*
     |--------------------------------------------------------------------------
