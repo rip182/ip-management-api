@@ -22,7 +22,7 @@ class UpdateInternetProtocolAdressRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'ip_address' => 'required|string',
+            'ip_address' => 'required|string|ip',
             'label' => 'required|string',
             'comment' => 'string'
         ];

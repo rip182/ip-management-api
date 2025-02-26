@@ -22,7 +22,7 @@ class StoreInternetProtocolAddressRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'ip_address' => 'required|string',
+            'ip_address' => 'required|ip|string',
             'label' => 'string|required',
             'comment' => 'string'
         ];
