@@ -14,7 +14,8 @@ class InternetProtocolAddressController extends Controller
      */
     public function index()
     {
-        //
+        $data = InternetProtocolAddress::all();
+        return response()->json($data, 200);
     }
 
     /**
@@ -40,7 +41,7 @@ class InternetProtocolAddressController extends Controller
      */
     public function show(InternetProtocolAddress $internetProtocolAddress)
     {
-        //
+        return response()->json($internetProtocolAddress, 200);
     }
 
     /**
