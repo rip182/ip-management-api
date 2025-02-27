@@ -9,6 +9,7 @@ use App\Enums\TokenAbility;
 use Illuminate\Support\Carbon;
 use Laravel\Sanctum\PersonalAccessToken;
 
+
 class AuthController extends Controller
 {
 
@@ -25,6 +26,25 @@ class AuthController extends Controller
 
         $accessToken = $user->createToken('access_token', [TokenAbility::ACCESS_API->value], Carbon::now()->addMinutes(config('sanctum.access_token_expiration')))->plainTextToken;
         $refreshToken = $user->createToken('refresh_token', [TokenAbility::ISSUE_ACCESS_TOKEN->value], Carbon::now()->addMinutes(config('sanctum.refresh_access_expiration')))->plainTextToken;
+
+        \OwenIt\Auditing\Models\Audit::create([
+            'user_type' => get_class($user),
+            'user_id' => $user->id,
+            'event' => 'login',
+            'auditable_type' => get_class($user),
+            'auditable_id' => $user->id,
+            'old_values' => [],
+            'new_values' => [
+                'logged_in_at' => now()->toDateTimeString(),
+                'guard' => 'sanctum',
+                'remember' => false,
+            ],
+            'url' => $request->fullUrl(),
+            'ip_address' => $request->ip(),
+            'user_agent' => $request->userAgent(),
+            'tags' => 'auth,login',
+            'created_at' => now(),
+        ]);
 
         return response()->json([
             'accessToken' => $accessToken,
