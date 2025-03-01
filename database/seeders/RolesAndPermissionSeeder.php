@@ -3,8 +3,10 @@
 namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
-use Spatie\Permission\Models\Role;
-use Spatie\Permission\Models\Permission;
+use Spatie\Permission\Models\Role as SpatieRole;
+use Spatie\Permission\Models\Permission as SpatiePermission;
+use App\Enums\Permission;
+use App\Enums\Role;
 
 class RolesAndPermissionSeeder extends Seeder
 {
@@ -18,9 +20,9 @@ class RolesAndPermissionSeeder extends Seeder
         app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
 
         // create permissions
-        Permission::create(['name' => 'edit audit']);
-        Permission::create(['name' => 'delete audit']);
-        Permission::create(['name' => 'read audit']);
+        SpatiePermission::create(['name' => Permission::READ_AUDIT->value]);
+        SpatiePermission::create(['name' => Permission::EDIT_AUDIT->value]);
+        SpatiePermission::create(['name' => Permission::DELETE_AUDIT->value]);
 
 
         app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
@@ -29,10 +31,10 @@ class RolesAndPermissionSeeder extends Seeder
         // $role->givePermissionTo('read audit');
 
 
-        $role = Role::create(['name' => 'admin'])
-            ->givePermissionTo(['read audit', 'edit audit']);
+        $role = SpatieRole::create(['name' => Role::ADMIN->value])
+            ->givePermissionTo([Permission::READ_AUDIT->value, Permission::EDIT_AUDIT->value]);
 
-        $role = Role::create(['name' => 'super-admin']);
-        $role->givePermissionTo(Permission::all());
+        $role = SpatieRole::create(['name' => Role::SUPER_ADMIN->value]);
+        $role->givePermissionTo(SpatiePermission::all());
     }
 }
