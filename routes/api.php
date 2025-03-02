@@ -14,8 +14,11 @@ Route::middleware(['auth:sanctum', 'ability:' . TokenAbility::ACCESS_API->value]
     Route::post('/logout', [AuthController::class, 'logout']);
 
     Route::apiResource('/internet-protocol-address', InternetProtocolAddressController::class)
-        ->only(['index', 'show', 'update', 'store'])
+        ->only(['index', 'show', 'store'])
         ->middleware('permission:' . Permission::READ_IP->value . '|' . Permission::CREATE_IP->value, '|' . Permission::EDIT_IP->value);
+
+    Route::put('/internet-protocol-address/{internet_protocol_address}', [InternetProtocolAddressController::class, 'update'])
+        ->middleware(['check-user-can-ip-edit']);
 
     Route::delete('internet-protocol-address/{id}', [InternetProtocolAddressController::class, 'destroy'])
         ->middleware('permission:' . Permission::DELETE_IP->value);
