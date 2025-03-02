@@ -3,7 +3,7 @@
 namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
-use App\Models\User; // Adjust based on your User model location
+use App\Models\User;
 use App\Enums\Role;
 
 class UserRolesAssignmentSeeder extends Seeder
@@ -13,10 +13,13 @@ class UserRolesAssignmentSeeder extends Seeder
      */
     public function run(): void
     {
-        // Assign "super admin" role to user with ID 1
-        $firstUser = User::find(1);
-        if ($firstUser) {
-            $firstUser->assignRole(Role::SUPER_ADMIN->value);
+        $users = User::all();
+        foreach ($users as $user) {
+            if ($user->id == 1) {
+                $user->assignRole(Role::SUPER_ADMIN->value);
+            } else {
+                $user->assignRole(Role::USER->value);
+            }
         }
     }
 }

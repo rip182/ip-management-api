@@ -20,21 +20,24 @@ class RolesAndPermissionSeeder extends Seeder
         app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
 
         // create permissions
-        SpatiePermission::create(['name' => Permission::READ_AUDIT->value]);
-        SpatiePermission::create(['name' => Permission::EDIT_AUDIT->value]);
-        SpatiePermission::create(['name' => Permission::DELETE_AUDIT->value]);
+        SpatiePermission::create(['name' => Permission::READ_AUDIT->value, 'guard_name' => 'api']);
+        SpatiePermission::create(['name' => Permission::EDIT_AUDIT->value, 'guard_name' => 'api']);
+        SpatiePermission::create(['name' => Permission::CREATE_IP->value, 'guard_name' => 'api']);
+        SpatiePermission::create(['name' => Permission::READ_IP->value, 'guard_name' => 'api']);
+        SpatiePermission::create(['name' => Permission::EDIT_IP->value, 'guard_name' => 'api']);
+        SpatiePermission::create(['name' => Permission::DELETE_IP->value, 'guard_name' => 'api']);
 
 
         app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
 
-        // $role = Role::create(['name' => 'user']);
-        // $role->givePermissionTo('read audit');
+        $role = SpatieRole::create(['name' => Role::USER->value, 'guard_name' => 'api']);
+        $role->syncPermissions([Permission::CREATE_IP->value, Permission::EDIT_IP->value, Permission::READ_IP->value]);
 
 
-        $role = SpatieRole::create(['name' => Role::ADMIN->value])
-            ->givePermissionTo([Permission::READ_AUDIT->value, Permission::EDIT_AUDIT->value]);
+        // $role = SpatieRole::create(['name' => Role::ADMIN->value, 'guard_name' => 'api'])
+        //     ->syncPermissions([Permission::READ_AUDIT->value, Permission::EDIT_AUDIT->value]);
 
-        $role = SpatieRole::create(['name' => Role::SUPER_ADMIN->value]);
-        $role->givePermissionTo(SpatiePermission::all());
+        $role = SpatieRole::create(['name' => Role::SUPER_ADMIN->value, 'guard_name' => 'api']);
+        $role->syncPermissions(SpatiePermission::all());
     }
 }
