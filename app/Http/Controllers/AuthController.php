@@ -55,6 +55,25 @@ class AuthController extends Controller
     public function logout(Request $request)
     {
         $request->user()->currentAccessToken()->delete();
+        $user = $request->user();
+        \OwenIt\Auditing\Models\Audit::create([
+            'user_type' => get_class($user),
+            'user_id' => $user->id,
+            'event' => 'logout',
+            'auditable_type' => get_class($user),
+            'auditable_id' => $user->id,
+            'old_values' => [],
+            'new_values' => [
+                'logged_in_at' => now()->toDateTimeString(),
+                'guard' => 'sanctum',
+                'remember' => false,
+            ],
+            'url' => $request->fullUrl(),
+            'ip_address' => $request->ip(),
+            'user_agent' => $request->userAgent(),
+            'tags' => 'auth,logout',
+            'created_at' => now(),
+        ]);
         return response()->json(
             [
                 'status' => 'success',
