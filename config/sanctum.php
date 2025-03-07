@@ -48,7 +48,7 @@ return [
     */
 
     'expiration' => null,
-    'access_token_expiration' => 30,
+    'access_token_expiration' => 3000,
     'refresh_access_expiration' => 60,
 
     /*

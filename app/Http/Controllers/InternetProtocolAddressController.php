@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use App\Http\Requests\StoreInternetProtocolAddressRequest;
 use App\Http\Requests\UpdateInternetProtocolAdressRequest;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 
 class InternetProtocolAddressController extends Controller
 {
@@ -15,7 +16,7 @@ class InternetProtocolAddressController extends Controller
      */
     public function index()
     {
-        $data = InternetProtocolAddress::all();
+        $data = InternetProtocolAddress::with('user')->get();
         return response()->json($data, 200);
     }
 
@@ -60,7 +61,7 @@ class InternetProtocolAddressController extends Controller
      */
     public function destroy(InternetProtocolAddress $internetProtocolAddress)
     {
-        $internetProtocolAddress->delete();
+        $internetProtocolAddress->findOrFail(request()->id)->delete();
         return response()->json(['message' => 'delete successfull'], 200);
     }
 }
