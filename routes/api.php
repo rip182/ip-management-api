@@ -9,13 +9,21 @@ use App\Http\Controllers\AuditController;
 use App\Http\Controllers\InternetProtocolAddressController;
 
 
-Route::middleware(['auth:sanctum', 'ability:' . TokenAbility::ACCESS_API->value])->group(function () {
+// Route::middleware(['auth:api', 'ability:' . TokenAbility::ACCESS_API->value])->group(function () {
+Route::middleware(['auth:api'])->group(function () {
 
-    Route::post('/logout', [AuthController::class, 'logout']);
+    Route::get('/user', function (Request $request) {
+        $user = $request->user();
+
+        return response()->json([
+            'user' => $user,
+            'role' => $user->getRoleNames()->first()
+        ]);
+    });
 
     Route::apiResource('/internet-protocol-address', InternetProtocolAddressController::class)
-        ->only(['index', 'show', 'store'])
-        ->middleware('permission:' . Permission::READ_IP->value . '|' . Permission::CREATE_IP->value, '|' . Permission::EDIT_IP->value);
+        ->only(['index', 'show', 'store']);
+    // ->middleware('permission:' . Permission::READ_IP->value . '|' . Permission::CREATE_IP->value, '|' . Permission::EDIT_IP->value);
 
     Route::put('/internet-protocol-address/{internet_protocol_address}', [InternetProtocolAddressController::class, 'update'])
         ->middleware(['check-user-can-ip-edit']);
@@ -28,8 +36,10 @@ Route::middleware(['auth:sanctum', 'ability:' . TokenAbility::ACCESS_API->value]
         ->middleware(['permission:' . Permission::READ_AUDIT->value]);
 });
 
-Route::middleware(['auth:sanctum', 'ability:' . TokenAbility::ISSUE_ACCESS_TOKEN->value])->group(function () {
-    Route::get('/auth/refresh-token', [AuthController::class, 'refreshToken']);
+Route::middleware(['auth:api'])->group(function () {
+    // Route::middleware(['auth:api', 'ability:' . TokenAbility::ISSUE_ACCESS_TOKEN->value])->group(function () {
+    Route::post('/logout', [AuthController::class, 'logout'])->middleware(['auth:api']);
 });
+Route::get('/auth/refresh-token', [AuthController::class, 'refreshToken']);
 
 Route::post('/login', [AuthController::class, 'login']);

@@ -26,7 +26,7 @@ class InternetProtocolAddressController extends Controller
     public function store(StoreInternetProtocolAddressRequest $request)
     {
 
-        $user_id = auth('sanctum')->id();
+        $user_id = Auth::guard('api')->id();
 
         $data = InternetProtocolAddress::create([
             'user_id' => $user_id,
