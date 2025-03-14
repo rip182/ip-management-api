@@ -20,7 +20,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'verified' => \App\Http\Middleware\EnsureEmailIsVerified::class,
             // 'abilities' => \Laravel\Sanctum\Http\Middleware\CheckAbilities::class,
             // 'ability' => \Laravel\Sanctum\Http\Middleware\CheckForAnyAbility::class,
-
+            'ability' => \App\Http\Middleware\CheckTokenAbility::class,
             'role' => \Spatie\Permission\Middleware\RoleMiddleware::class,
             'permission' => \Spatie\Permission\Middleware\PermissionMiddleware::class,
             'role_or_permission' => \Spatie\Permission\Middleware\RoleOrPermissionMiddleware::class,

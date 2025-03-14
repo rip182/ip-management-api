@@ -4,16 +4,11 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\User;
-use Illuminate\Support\Facades\Hash;
 use App\Enums\TokenAbility;
-use Illuminate\Support\Carbon;
-use Laravel\Sanctum\PersonalAccessToken;
 use Tymon\JWTAuth\Facades\JWTAuth;
-use Tymon\JWTAuth\Exceptions\JWTException;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Log;
 use Tymon\JWTAuth\Exceptions\TokenExpiredException;
 use Tymon\JWTAuth\Exceptions\TokenInvalidException;
+use OwenIt\Auditing\Models\Audit;
 
 class AuthController extends Controller
 {
@@ -26,18 +21,22 @@ class AuthController extends Controller
 
     public function login(Request $request)
     {
+        $accessAbility = TokenAbility::ACCESS_API->value;
+        $refreshAbility = TokenAbility::ISSUE_ACCESS_TOKEN->value;
         $credentials = $request->only('email', 'password');
 
-        if (! $token = Auth::guard('api')->attempt($credentials)) {
+        if (! $token = JWTAuth::claims(['abilities' => $accessAbility])->attempt($credentials)) {
             return response()->json(['error' => 'Unauthorized'], 401);
         }
         $user = User::where('email',  $request->email)->first();
+
         $role = $user->getRoleNames()->first();
-        $refreshToken = JWTAuth::customClaims(['refresh' => true])
+        $refreshToken = JWTAuth::claims([
+            'refresh' => true,
+            'abilities' => $refreshAbility
+        ])->fromUser($user);
 
-            ->fromUser($user);
-
-        \OwenIt\Auditing\Models\Audit::create([
+        Audit::create([
             'user_type' => get_class($user),
             'user_id' => $user->id,
             'event' => 'login',
@@ -61,7 +60,8 @@ class AuthController extends Controller
             'token_type' => 'bearer',
             'expires_in' => config('jwt.ttl') * 60,
             'user' => $user,
-            'role' => $role
+            'role' => $role,
+            'refresh_token' => $refreshToken
         ]);
 
         return $response->withCookie(
@@ -85,7 +85,7 @@ class AuthController extends Controller
             JWTAuth::invalidate(JWTAuth::getToken());
             $request->user();
             $user = $request->user();
-            \OwenIt\Auditing\Models\Audit::create([
+            Audit::create([
                 'user_type' => get_class($user),
                 'user_id' => $user->id,
                 'event' => 'logout',
@@ -118,17 +118,17 @@ class AuthController extends Controller
     public function refreshToken(Request $request)
     {
         $refreshToken = $request->cookie('refresh_token');
-
+        // dd($refreshToken, 'refresh');
         if (!$refreshToken) {
             return response()->json(['error' => 'Refresh token missing'], 401);
         }
 
         try {
             JWTAuth::setToken($refreshToken);
-
             if (!JWTAuth::payload()->get('refresh')) {
                 return response()->json(['error' => 'Invalid refresh token'], 401);
             }
+            // dd($refreshToken, 'refresh-fail');
 
             $user = JWTAuth::toUser($refreshToken);
 
@@ -138,7 +138,20 @@ class AuthController extends Controller
 
             $newAccessToken = JWTAuth::fromUser($user);
 
-            return response()->json(['accessToken' => $newAccessToken]);
+
+            return response()->json(['accessToken' => $newAccessToken])->withCookie(
+                cookie(
+                    'refresh_token',
+                    $refreshToken,
+                    60 * 24 * 7,
+                    '/',
+                    null,
+                    config('app.env') === 'production',
+                    true,
+                    false,
+                    'Strict'
+                )
+            );;
         } catch (TokenExpiredException $e) {
             return response()->json(['error' => 'Refresh token expired'], 403);
         } catch (TokenInvalidException $e) {
