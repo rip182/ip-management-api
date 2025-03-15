@@ -3,11 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Models\InternetProtocolAddress;
-use Illuminate\Http\Request;
 use App\Http\Requests\StoreInternetProtocolAddressRequest;
 use App\Http\Requests\UpdateInternetProtocolAdressRequest;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\DB;
 
 class InternetProtocolAddressController extends Controller
 {
@@ -28,12 +27,21 @@ class InternetProtocolAddressController extends Controller
 
         $user_id = Auth::guard('api')->id();
 
+        DB::beginTransaction();
+
         $data = InternetProtocolAddress::create([
             'user_id' => $user_id,
             'ip_address' => $request->validated('ip_address'),
             'label' => $request->validated('label'),
             'comment' => $request->validated('comment'),
         ]);
+
+        if ($data->audits()->count() === 0) {
+            DB::rollBack();
+            return response()->json(['message' => 'Failed to create IP address'], 500);
+        }
+
+        DB::commit();
 
         return response()->json($data, 201);
     }
@@ -51,9 +59,18 @@ class InternetProtocolAddressController extends Controller
      */
     public function update(UpdateInternetProtocolAdressRequest $request, InternetProtocolAddress $internetProtocolAddress)
     {
-        $internetProtocolAddress->update($request->validated());
-        $data = $internetProtocolAddress->fresh();
-        return response()->json($data, 200);
+        DB::transaction(function () use ($request, $internetProtocolAddress) {
+            $internetProtocolAddress->update($request->validated());
+            $data = $internetProtocolAddress->fresh();
+
+            if (!$data->audits()->where('event', 'updated')->latest()->first()) {
+                throw new \Exception('Audit failed');
+            }
+
+            return response()->json($data, 200);
+        });
+
+        return response()->json(['message' => 'Failed to update IP address'], 500);
     }
 
     /**

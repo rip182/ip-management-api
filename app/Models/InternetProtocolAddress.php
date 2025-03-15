@@ -18,10 +18,24 @@ class InternetProtocolAddress extends Model implements Auditable
         'ip_address',
         'label',
         'comment',
+        'user_id'
     ];
 
     public function User()
     {
         return $this->belongsTo(User::class);
+    }
+
+    /**
+     * Customize the data included in the audit.
+     *
+     * @return array
+     */
+
+    public function transformAudit(array $data): array
+    {
+        $data['ip_address_id'] = $this->id;
+
+        return $data;
     }
 }

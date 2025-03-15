@@ -10,7 +10,7 @@ class AuditController extends Controller
 {
     public function index()
     {
-        return response()->json(Audit::paginate());
+        return response()->json(Audit::with('user')->paginate());
     }
 
     public function show(Audit $audit)
