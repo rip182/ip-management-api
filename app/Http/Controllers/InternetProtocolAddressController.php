@@ -38,7 +38,7 @@ class InternetProtocolAddressController extends Controller
 
         if ($data->audits()->count() === 0) {
             DB::rollBack();
-            return response()->json(['message' => 'Failed to create IP address'], 500);
+            return response()->json(['message' => 'Failed to create IP address'], 400);
         }
 
         DB::commit();

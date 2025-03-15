@@ -14,9 +14,12 @@ class UserRolesAssignmentSeeder extends Seeder
     public function run(): void
     {
         $users = User::all();
+        $firstUser = true;
+
         foreach ($users as $user) {
-            if ($user->id == 1) {
+            if ($firstUser) {
                 $user->assignRole(Role::SUPER_ADMIN->value);
+                $firstUser = false;
             } else {
                 $user->assignRole(Role::USER->value);
             }
