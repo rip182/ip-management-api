@@ -61,7 +61,6 @@ class AuthController extends Controller
             'expires_in' => config('jwt.ttl') * 60,
             'user' => $user,
             'role' => $role,
-            'refresh_token' => $refreshToken
         ]);
 
         return $response->withCookie(
@@ -136,8 +135,7 @@ class AuthController extends Controller
                 return response()->json(['error' => 'User not found'], 401);
             }
 
-            $newAccessToken = JWTAuth::fromUser($user);
-
+            $newAccessToken = JWTAuth::claims(['abilities' => 'access-api'])->fromUser($user);
 
             return response()->json(['accessToken' => $newAccessToken])->withCookie(
                 cookie(

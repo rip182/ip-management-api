@@ -31,7 +31,6 @@ class CheckTokenAbility
             $payload = JWTAuth::getPayload($token);
 
             $abilities = $payload->get('abilities', []);
-
             if ($requiredAbility != $abilities) {
                 return response()->json(['error' => 'Forbidden'], 403);
             }
