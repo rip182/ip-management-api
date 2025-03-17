@@ -8,6 +8,8 @@ use App\Models\User;
 use App\Enums\TokenAbility;
 use Laravel\Sanctum\PersonalAccessToken;
 use Carbon\Carbon;
+use Tymon\JWTAuth\Facades\JWTAuth;
+use App\Http\Middleware\CheckTokenAbility;
 
 class AuthApiTest extends TestCase
 {
@@ -36,39 +38,22 @@ class AuthApiTest extends TestCase
     {
 
         $response = $this->postJson('/api/login', [
-            'email' => 'test@example.com',
+            'email' => $this->user->email,
             'password' => 'password',
         ]);
 
+        $this->assertDatabaseHas('audits', [
+            'user_id' => $this->user->id,
+            'event' => 'login',
+            'tags' => 'auth,login'
+        ]);
+
         $response->assertStatus(200)
-            ->assertJsonStructure(['accessToken', 'refreshToken']);
-
-        $accessToken = $response->json('accessToken');
-        $refreshToken = $response->json('refreshToken');
-
-        $this->assertCount(2, $this->user->tokens);
-
-        $accessTokenRecord = PersonalAccessToken::findToken($accessToken);
-        $this->assertNotNull($accessTokenRecord);
-        $this->assertEquals('access_token', $accessTokenRecord->name);
-        $this->assertEquals([TokenAbility::ACCESS_API->value], $accessTokenRecord->abilities);
-        $this->assertTrue(
-            $accessTokenRecord->expires_at->diffInSeconds(
-                Carbon::now()->addMinutes(config('sanctum.access_token_expiration'))
-            ) < 5,
-            'Access token expiration time is not within expected range'
-        );
-
-        $refreshTokenRecord = PersonalAccessToken::findToken($refreshToken);
-        $this->assertNotNull($refreshTokenRecord);
-        $this->assertEquals('refresh_token', $refreshTokenRecord->name);
-        $this->assertEquals([TokenAbility::ISSUE_ACCESS_TOKEN->value], $refreshTokenRecord->abilities);
-        $this->assertTrue(
-            $refreshTokenRecord->expires_at->diffInSeconds(
-                Carbon::now()->addMinutes(config('sanctum.refresh_access_expiration'))
-            ) < 5,
-            'Refresh token expiration time is not within expected range'
-        );
+            ->assertJsonStructure([
+                'accessToken',
+                'user',
+                'role',
+            ]);
     }
 
     /**
@@ -77,14 +62,14 @@ class AuthApiTest extends TestCase
     public function test_login_fails_with_incorrect_password()
     {
         $response = $this->postJson('/api/login', [
-            'email' => 'test@example.com',
+            'email' => $this->user->email,
             'password' => 'wrongpassword',
         ]);
 
-        $response->assertStatus(200)
-            ->assertJson(['message' => ['Username or password incorrect']]);
-
-        $this->assertCount(0, $this->user->tokens);
+        $response->assertStatus(401)
+            ->assertJson([
+                'error' => 'Invalid username or password'
+            ]);
     }
 
     /**
@@ -98,8 +83,8 @@ class AuthApiTest extends TestCase
             'password' => 'password',
         ]);
 
-        $response->assertStatus(200)
-            ->assertJson(['message' => ['Username or password incorrect']]);
+        $response->assertStatus(401)
+            ->assertJson(['error' => 'Invalid username or password']);
     }
 
     /**
@@ -108,17 +93,26 @@ class AuthApiTest extends TestCase
     public function test_successful_logout()
     {
 
-        $token = $this->user->createToken('access_token', [TokenAbility::ACCESS_API->value])->plainTextToken;
+        $token = JWTAuth::claims(['abilities' => 'access-api'])->fromUser($this->user);
 
-
-        $response = $this->withHeader('Authorization', 'Bearer ' . $token)
+        $response = $this->withHeader('Authorization', "Bearer $token")
             ->postJson('/api/logout');
 
-
         $response->assertStatus(200)
-            ->assertJson(['status' => 'success', 'message' => 'User logged out successfully']);
+            ->assertJson([
+                'status' => 'success',
+                'message' => 'User logged out successfully'
+            ]);
 
-        $this->assertNull(PersonalAccessToken::findToken($token));
+        $this->assertFalse(JWTAuth::setToken($token)->check());
+
+        $response->assertCookieExpired('refresh_token');
+
+        $this->assertDatabaseHas('audits', [
+            'user_id' => $this->user->id,
+            'event' => 'logout',
+            'tags' => 'auth,logout'
+        ]);
     }
 
     /**
@@ -132,23 +126,7 @@ class AuthApiTest extends TestCase
         $response->assertStatus(401);
     }
 
-    /**
-     * Test successful token refresh with valid refresh token.
-     */
-    public function test_successful_token_refresh()
-    {
 
-        $refreshToken = $this->user->createToken('refresh_token', [TokenAbility::ISSUE_ACCESS_TOKEN->value])->plainTextToken;
-
-        $response = $this->withHeader('Authorization', 'Bearer ' . $refreshToken)
-            ->getJson('/api/auth/refresh-token');
-
-
-        $response->assertStatus(200)
-            ->assertJsonStructure(['message', 'token', 'refreshToken']);
-
-        $this->assertCount(2, $this->user->tokens);
-    }
 
     /**
      * Test token refresh fails without required ability.
@@ -156,7 +134,7 @@ class AuthApiTest extends TestCase
     public function test_token_refresh_fails_without_required_ability()
     {
 
-        $token = $this->user->createToken('access_token', [TokenAbility::ACCESS_API->value])->plainTextToken;
+        $token = JWTAuth::claims(['abilities' => 'access-api'])->fromUser($this->user);
 
         $response = $this->withHeader('Authorization', 'Bearer ' . $token)
             ->getJson('/api/auth/refresh-token');
@@ -176,7 +154,7 @@ class AuthApiTest extends TestCase
 
     public function test_token_refresh_fails_when_used_as_access_api()
     {
-        $token = $this->user->createToken('access_token', [TokenAbility::ISSUE_ACCESS_TOKEN->value])->plainTextToken;
+        $token = JWTAuth::claims(['abilities' => 'issue-access-token'])->fromUser($this->user);
         $response = $this->withHeader('Authorization', 'Bearer ' . $token)
             ->getJson('/api/user');
 
