@@ -7,6 +7,7 @@ use App\Enums\TokenAbility;
 use App\Enums\Permission;
 use App\Http\Controllers\AuditController;
 use App\Http\Controllers\InternetProtocolAddressController;
+use App\Http\Controllers\DashboardController;
 
 
 Route::middleware(['auth:api', 'ability:' . TokenAbility::ACCESS_API->value])->group(function () {
@@ -33,7 +34,10 @@ Route::middleware(['auth:api', 'ability:' . TokenAbility::ACCESS_API->value])->g
         ->only(['index', 'show'])
         ->middleware(['permission:' . Permission::READ_AUDIT->value]);
 
-    Route::post('/logout', [AuthController::class, 'logout'])->middleware(['auth:api']);
+    Route::post('/logout', [AuthController::class, 'logout']);
+
+    Route::get('get-active-users', [DashboardController::class, 'getActiveUsers']);
+    Route::get('stats', [DashboardController::class, 'getStats']);
 });
 
 Route::middleware(['ability:' . TokenAbility::ISSUE_ACCESS_TOKEN->value])->group(function () {
