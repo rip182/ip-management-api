@@ -35,6 +35,10 @@ echo "Checking database connection..."
 php artisan db:show || echo "Database connection check failed, proceeding anyway..."
 
 echo "Running database migrations..."
+if php artisan migrate --force then
+ echo "Migration failed, but continuing..."
+fi
+
 php artisan migrate --force
 
 echo "Seeding Data"
