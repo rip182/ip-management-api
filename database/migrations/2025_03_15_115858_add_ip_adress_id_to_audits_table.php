@@ -11,7 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('Audits', function (Blueprint $table) {
+        Schema::table('audits', function (Blueprint $table) {
             $table->integer('ip_address_id')->after('user_id')->nullable();
         });
     }
@@ -21,7 +21,7 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('Audits', function (Blueprint $table) {
+        Schema::table('audits', function (Blueprint $table) {
             $table->dropColumn('ip_address_id');
         });
     }

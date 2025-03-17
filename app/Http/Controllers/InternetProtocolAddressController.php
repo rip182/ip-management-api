@@ -82,7 +82,9 @@ class InternetProtocolAddressController extends Controller
      */
     public function destroy(InternetProtocolAddress $internetProtocolAddress)
     {
-        $internetProtocolAddress->findOrFail(request()->id)->delete();
-        return response()->json(['message' => 'delete successfull'], 200);
+        // $internetProtocolAddress->findOrFail(request()->id)->delete();
+        // return response()->json(['message' => 'delete successfull'], 200);
+        $internetProtocolAddress->delete();
+        return response()->json(['message' => 'Delete successful'], 200);
     }
 }
