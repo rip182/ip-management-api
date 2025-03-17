@@ -15,7 +15,7 @@ class InternetProtocolAddressController extends Controller
      */
     public function index()
     {
-        $data = InternetProtocolAddress::with('user')->get();
+        $data = InternetProtocolAddress::with('user')->paginate();
         return response()->json($data, 200);
     }
 
@@ -59,18 +59,22 @@ class InternetProtocolAddressController extends Controller
      */
     public function update(UpdateInternetProtocolAdressRequest $request, InternetProtocolAddress $internetProtocolAddress)
     {
-        DB::transaction(function () use ($request, $internetProtocolAddress) {
-            $internetProtocolAddress->update($request->validated());
-            $data = $internetProtocolAddress->fresh();
+        try {
+            return DB::transaction(function () use ($request, $internetProtocolAddress) {
+                $internetProtocolAddress->update($request->validated());
 
-            if (!$data->audits()->where('event', 'updated')->latest()->first()) {
-                throw new \Exception('Audit failed');
-            }
+                if (!$internetProtocolAddress->fresh()->audits()->where('event', 'updated')->exists()) {
+                    throw new \Exception('Audit record missing');
+                }
 
-            return response()->json($data, 200);
-        });
-
-        return response()->json(['message' => 'Failed to update IP address'], 500);
+                return response()->json($internetProtocolAddress->fresh(), 200);
+            });
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Failed to update IP address',
+                'error' => $e->getMessage()
+            ], 500);
+        }
     }
 
     /**

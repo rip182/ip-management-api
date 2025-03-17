@@ -26,7 +26,7 @@ class AuthController extends Controller
         $credentials = $request->only('email', 'password');
 
         if (! $token = JWTAuth::claims(['abilities' => $accessAbility])->attempt($credentials)) {
-            return response()->json(['error' => 'Unauthorized'], 401);
+            return response()->json(['error' => 'Invalid username or password'], 401);
         }
         $user = User::where('email',  $request->email)->first();
 
